@@ -255,12 +255,104 @@ loader.load(
 );
 ```
 
+### 9. 纹理与贴图 (Textures)
+
+为了让物体看起来更真实，我们通常会把图片“贴”在物体表面。
+
+```javascript
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load("path/to/image.png");
+
+const material = new THREE.MeshStandardMaterial({
+  map: texture, // 颜色贴图
+  // alphaMap: alphaTexture, // 透明度贴图（白色不透明，黑色透明）
+  // displacementMap: heightTexture // 置换贴图（改变顶点位置，制造真实凹凸）
+});
+```
+
+### 10. 开启阴影 (Shadows)
+
+Three.js 为了性能考虑，默认是关闭阴影的。开启阴影需要满足四个条件：
+
+1.  **渲染器开启阴影计算**：
+    ```javascript
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 柔和阴影
+    ```
+2.  **灯光投射阴影**（通常只有平行光和聚光灯可以）：
+    ```javascript
+    directionalLight.castShadow = true;
+    ```
+3.  **物体投射阴影**：
+    ```javascript
+    cube.castShadow = true;
+    ```
+4.  **物体（地面）接收阴影**：
+    ```javascript
+    plane.receiveShadow = true;
+    ```
+
+### 11. 交互与点击 (Raycaster)
+
+如何在 3D 空间中点选物体？我们需要使用 **光线投射技术 (Raycasting)**。它的原理是从相机位置向鼠标点击的方向发射一条射线，检测这条射线穿过了哪些物体。
+
+```javascript
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+window.addEventListener("click", (event) => {
+  // 1. 将鼠标坐标归一化到 -1 到 +1 的区间
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  // 2. 更新射线
+  raycaster.setFromCamera(mouse, camera);
+
+  // 3. 计算物体交点
+  const intersects = raycaster.intersectObjects(scene.children);
+
+  if (intersects.length > 0) {
+    // intersects[0] 是离相机最近的物体
+    console.log("点击了:", intersects[0].object);
+    intersects[0].object.material.color.set(0xff0000); // 点击变红
+  }
+});
+```
+
+### 12. 粒子系统 (Particles)
+
+除了用 Mesh (网格) 模拟实体，Three.js 还可以用 **Points (点)** 来模拟雨、雪、星空等大量微小物体。
+
+```javascript
+const particlesGeometry = new THREE.BufferGeometry();
+const count = 5000;
+
+// 设置每个点的位置 (x, y, z)
+const positions = new Float32Array(count * 3);
+for (let i = 0; i < count * 3; i++) {
+  positions[i] = (Math.random() - 0.5) * 10;
+}
+
+particlesGeometry.setAttribute(
+  "position",
+  new THREE.BufferAttribute(positions, 3),
+);
+
+const particlesMaterial = new THREE.PointsMaterial({
+  size: 0.1,
+  sizeAttenuation: true, // 远小近大
+  color: 0xffffff,
+});
+
+const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+scene.add(particles);
+```
+
 ---
 
 ## 📝 学习资源推荐
 
 - [Three.js 官方文档](https://threejs.org/docs/index.html) - 最权威的查询手册。
 - [Three.js Examples](https://threejs.org/examples/) - 改代码是最好的学习方式。
-
 
 祝你学习愉快！🌟
